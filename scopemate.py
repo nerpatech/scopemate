@@ -14,14 +14,10 @@ from io import BytesIO
 from PIL import Image
 import pyvisa
 
-masks = []
-
-compat_manuf = 'RIGOL TECHNOLOGIES'
-compat_instr = ['2072','2102','2202','2302']
 parser = argparse.ArgumentParser()
 rm = pyvisa.ResourceManager()
 
-def get_screen(resource, filename):
+def get_screen(resource, filename, masks):
 
     instr = rm.open_resource(resource)
     instr.timeout = 30000
@@ -29,9 +25,8 @@ def get_screen(resource, filename):
 
     name = filename + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
     instr.write(':DISPlay:DATA?')
-    screenshot = instr.read_raw()[11:] # discard the BMP header
+    screenshot = instr.read_raw()[11:] # discard BMP header
     im = Image.open(BytesIO(screenshot))
-#    overlay = Image.open('mask-right-tab.png')
     im.putalpha(255)
     for mask in masks:
         overlay = Image.open(mask)
@@ -53,24 +48,15 @@ def set_time(resource):
 
 
 
-parser.add_argument('-c', '--comment',
-                    help="add comment to the screenshot EXIF",
-                    action='store_true')
-input_group = parser.add_mutually_exclusive_group()
-input_group.add_argument("-f", "--file", help="input file to process \
-                    (not implemented)")
-input_group.add_argument("-i", "--instrument", help="instrument to query")
+parser.add_argument("-i", "--instrument", help="instrument to query")
 parser.add_argument("-l", "--list", help="list available instruments",
                     action='store_true')
 parser.add_argument("-m", "--mask", help="apply mask(s)", nargs='+', default=[])
-parser.add_argument("-n", "--number", help="store instrument's serial \
-                    number in the screenshot EXIF")
 parser.add_argument("-o", "--output", help="output filename prefix")
 parser.add_argument("-s", "--synchronize", help="sync instrument's \
                     date and time with a PC", action="store_true")
 
 args = parser.parse_args()
-masks = args.mask
 
 if args.list:
     print(rm.list_resources())
@@ -88,8 +74,9 @@ if args.synchronize:
         set_time(args.instrument)
     else:
         print("-i required")
+    exit()
 
-get_screen(args.instrument, filename)
+get_screen(args.instrument, filename, args.mask)
 exit()
 
 print("Nothing to do. Use '-h' to get help")
