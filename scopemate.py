@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Takes a screenshot of Rigol Oscilloscope. Compatible with DS2000 series, tested on MSO2302A
 # In no particular order, inspired by:
 #   https://github.com/rdpoor/rigol-grab
@@ -9,21 +10,28 @@
 #   https://github.com/pklaus/ds1054z
 
 import argparse
+import time
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
 import pyvisa
 
+default_mask = ['mask-default-blank.png']
+do_clean = False
+do_sync = False
+
 parser = argparse.ArgumentParser()
 rm = pyvisa.ResourceManager()
 
 def get_screen(resource, filename, masks):
-
     instr = rm.open_resource(resource)
     instr.timeout = 30000
     instr.chunk_size = 1420     # magic number for faster speed
-
     name = filename + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+    if do_clean:
+       clean_screen(instr)
+    if do_sync:
+        sync_time(instr)
     instr.write(':DISPlay:DATA?')
     screenshot = instr.read_raw()[11:] # discard BMP header
     im = Image.open(BytesIO(screenshot))
@@ -34,34 +42,37 @@ def get_screen(resource, filename, masks):
     im.save(name)
     instr.close()
 
-def set_time(resource):
-
-    instr = rm.open_resource(resource)
-    instr.timeout = 30000
-    instr.chunk_size = 1420     # magic number for faster speed
+# 'instr' must be open before calling this function 
+def clean_screen(instr):
+    instr.query(':MEASure:CLEar ALL' + ';*OPC?')
+    time.sleep(1)
+    print("Measurements cleaned")
+    
+# 'instr' must be open before calling this function
+def sync_time(instr):
 
     date_time = (datetime.now().strftime('%Y,%m,%d %H,%M,%S').split(' '))
     instr.query('SYSTem:DATE ' + date_time[0] + ';*OPC?')
     instr.query('SYSTem:TIME ' + date_time[1] + ';*OPC?')
-    instr.close()
-
-
-
+    print("Oscilloscope clock set to PC time")
 
 parser.add_argument("-i", "--instrument", help="instrument to query")
 parser.add_argument("-l", "--list", help="list available instruments",
                     action='store_true')
-parser.add_argument("-m", "--mask", help="apply mask(s)", nargs='+', default=[])
+parser.add_argument("-m", "--mask", nargs='*', help="apply mask(s)")
 parser.add_argument("-o", "--output", help="output filename prefix")
 parser.add_argument("-s", "--synchronize", help="sync instrument's \
                     date and time with a PC", action="store_true")
+parser.add_argument("-c", "--clean", help="turn off the \
+                    measurements at the bottom of the screen",
+                    action="store_true")
 
 args = parser.parse_args()
 
+# if -l is specified all other parameters are silently ignored
 if args.list:
     print(rm.list_resources())
-    exit()
-
+    exit(0)
 
 if args.instrument:
     if args.output:
@@ -69,14 +80,20 @@ if args.instrument:
     else:
         filename = 'screenshot'
 
-if args.synchronize:
-    if args.instrument:
-        set_time(args.instrument)
-    else:
-        print("-i required")
-    exit()
+    if args.mask:
+        pass
+    elif args.mask is None:  # New condition for no -m parameter
+        args.mask = []       # Empty list means no masks
+    else: 
+        args.mask = default_mask
 
-get_screen(args.instrument, filename, args.mask)
-exit()
+    if args.clean:
+        do_clean = True
+
+    if args.synchronize:
+        do_sync = True    
+    
+    get_screen(args.instrument, filename, args.mask)
+    exit(0)
 
 print("Nothing to do. Use '-h' to get help")
