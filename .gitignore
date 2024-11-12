@@ -4,5 +4,6 @@ venv/
 __pycache__/
 *xcf
 *nerpa*
+test-output*
 *~
 screenshot*

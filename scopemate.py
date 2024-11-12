@@ -31,8 +31,7 @@ def get_screen(resource: pyvisa.Resource, filename: str,
     with rm.open_resource(resource) as instr:
         instr.timeout = TIMEOUT
         instr.chunk_size = CHUNK_SIZE
-        name = filename + '-' + datetime.now(). \
-            strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+        name = filename + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
         if do_clean:
             clean_screen(instr)
         if do_sync:
