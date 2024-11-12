@@ -70,9 +70,15 @@ def main() -> None:
                     action="store_true")
 
     args = parser.parse_args()    
+    
     # if -l is specified all other parameters are silently ignored
     if args.list:
         print(rm.list_resources())
+        return
+
+    # Check for dependent arguments without -i being specified
+    if not args.instrument and (args.mask is not None or args.clean or args.synchronize):
+        print("Error: Options -m, -c, and -s require -i/--instrument to be specified")
         return
 
     if args.instrument:
@@ -100,6 +106,5 @@ def main() -> None:
         return
 
     print("Nothing to do. Use '-h' to get help")
-
 if __name__ == "__main__":
     main()
