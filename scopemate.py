@@ -47,21 +47,18 @@ def get_screen(resource: pyvisa.Resource, filename: str,
         im.save(name)
     instr.close()
 
-# 'instr' must be open before calling this function 
-def clean_screen(instr):
+def clean_screen(instr: pyvisa.Resource) -> None:
     instr.query(':MEASure:CLEar ALL' + ';*OPC?')
     time.sleep(1)
     print("Measurements cleaned")
-    
-# 'instr' must be open before calling this function
-def sync_time(instr):
 
+def sync_time(instr: pyvisa.Resource) -> None:
     date_time = (datetime.now().strftime('%Y,%m,%d %H,%M,%S').split(' '))
     instr.query('SYSTem:DATE ' + date_time[0] + ';*OPC?')
     instr.query('SYSTem:TIME ' + date_time[1] + ';*OPC?')
     print("Oscilloscope clock set to PC time")
 
-def main():
+def main() -> None:
     parser.add_argument("-i", "--instrument", help="instrument to query")
     parser.add_argument("-l", "--list", help="list available instruments",
                     action='store_true')
@@ -72,8 +69,8 @@ def main():
     parser.add_argument("-c", "--clean", help="turn off the \
                     measurements at the bottom of the screen",
                     action="store_true")
-    args = parser.parse_args()
-    
+
+    args = parser.parse_args()    
     # if -l is specified all other parameters are silently ignored
     if args.list:
         print(rm.list_resources())
