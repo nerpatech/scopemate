@@ -16,7 +16,8 @@ from io import BytesIO
 from PIL import Image
 import pyvisa
 
-CHUNK_SIZE = 1420
+CHUNK_SIZE = 1420   # set VISA chunk size equal to the Ethernet frame
+                    # size. This improves transfer speed
 TIMEOUT = 30000
 DEFAULT_MASK = ['mask-default-blank.png']
 do_clean = False
@@ -25,11 +26,13 @@ do_sync = False
 parser = argparse.ArgumentParser()
 rm = pyvisa.ResourceManager()
 
-def get_screen(resource, filename, masks):
+def get_screen(resource: pyvisa.Resource, filename: str,
+               masks: list[str]) -> None:
     with rm.open_resource(resource) as instr:
         instr.timeout = TIMEOUT
         instr.chunk_size = CHUNK_SIZE
-        name = filename + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
+        name = filename + '-' + datetime.now(). \
+            strftime("%Y-%m-%d_%H-%M-%S") + '.png'
         if do_clean:
             clean_screen(instr)
         if do_sync:
