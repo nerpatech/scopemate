@@ -14,6 +14,7 @@ import time
 from datetime import datetime
 from io import BytesIO
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 import pyvisa
 
 CHUNK_SIZE = 1420   # set VISA chunk size equal to the Ethernet frame
@@ -43,8 +44,18 @@ def get_screen(resource: pyvisa.Resource, filename: str,
         for mask in masks:
             overlay = Image.open(mask)
             im = Image.alpha_composite(im, overlay)
-        im.save(name)
+        im.save(name, pnginfo=add_metadata(instr))
     instr.close()
+
+def add_metadata(instr) -> PngInfo:
+    metadata = PngInfo() # add instrument information
+    sysinfo = (instr.query('*IDN?'))
+    calibration_date = (instr.query('CALibrate:DATE?'))
+    calibration_time = (instr.query('CALibrate:TIME?'))
+    metadata.add_text("System Information", sysinfo)
+    metadata.add_text("Calibration Date(D-M-Y)", calibration_date)
+    metadata.add_text("Calibraton Time", calibration_time)
+    return metadata
 
 def clean_screen(instr: pyvisa.Resource) -> None:
     instr.query(':MEASure:CLEar ALL' + ';*OPC?')

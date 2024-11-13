@@ -1,3 +1,9 @@
+response = instrument.query("*IDN?")
+
+# Print the response
+print(response)
+
+
 The purpose of this script is to automate the process of removing unnecessary information from oscilloscope screenshots making them easier to read. It captures the screenshot, applies one or more transparency masks and outputs the result into an image file.
 
 The script takes several inputs:
@@ -50,7 +56,7 @@ llama3.2-vision explanation
 
 Scopemate.py
 
-Scopemate.py is a Python script designed to take a screenshot of an Oscilloscope, specifically the DS2000 series from Rigol. The purpose of this code is to automate the process of capturing images of the oscilloscope's screen, which can be useful for documentation, analysis, or even remote monitoring.
+Scopemate.py is a Python script designed to take a screenshot of an oscilloscope, specifically the DS2000 series from Rigol. The purpose of this code is to automate the process of capturing images of the oscilloscope's screen, which can be useful for documentation, analysis, or even remote monitoring.
 
 To use scopemate.py, you need to provide some input. You can either specify the name of the instrument (oscilloscope) you want to capture using the -i or --instrument flag, or simply list all available instruments on your system using the -l or --list flag. If you choose to capture an image, you'll also need to provide a mask file (an image with transparent areas) that will be overlaid onto the screenshot.
 
@@ -62,4 +68,4 @@ One important logic flow in scopemate.py is the application of masks to the capt
 
 Another important data transformation happening in scopemate.py is the synchronization of the oscilloscope's clock with a PC's system time. If you use the --synchronize flag, the code will query the oscilloscope for its current date and time and adjust it to match your PC's system time. This ensures that any timestamped measurements or data captured from the oscilloscope are accurately synchronized with your PC's clock.
 
-Overall, scopemate.py is a useful tool for anyone who needs to capture images of an Oscilloscope screen, especially in situations where manual screenshots might be impractical or error-prone.
+Overall, scopemate.py is a useful tool for anyone who needs to capture images of an oscilloscope screen, especially in situations where manual screenshots might be impractical or error-prone.
