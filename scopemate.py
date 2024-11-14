@@ -44,18 +44,19 @@ def get_screen(resource: pyvisa.Resource, filename: str,
         for mask in masks:
             overlay = Image.open(mask)
             im = Image.alpha_composite(im, overlay)
-        im.save(name, pnginfo=add_metadata(instr))
+        im.save(name, pnginfo=add_data(instr))
     instr.close()
 
-def add_metadata(instr) -> PngInfo:
-    metadata = PngInfo() # add instrument information
+# add instrument information to the screenshot file
+def add_data(instr) -> PngInfo:
+    txt_data = PngInfo()
     sysinfo = (instr.query('*IDN?'))
     calibration_date = (instr.query('CALibrate:DATE?'))
     calibration_time = (instr.query('CALibrate:TIME?'))
-    metadata.add_text("System Information", sysinfo)
-    metadata.add_text("Calibration Date(D-M-Y)", calibration_date)
-    metadata.add_text("Calibraton Time", calibration_time)
-    return metadata
+    txt_data.add_text("System Information", sysinfo)
+    txt_data.add_text("Calibration Date(Year, Month, Date)", calibration_date)
+    txt_data.add_text("Calibraton Time", calibration_time)
+    return txt_data
 
 def clean_screen(instr: pyvisa.Resource) -> None:
     instr.query(':MEASure:CLEar ALL' + ';*OPC?')
