@@ -6,11 +6,11 @@ from PIL import Image
 import glob
 
 def extract_png_info(filename: str, verbose: bool = False) -> None:
-    """Extract and display PNG text chunks from image file.
+    """Extract and display PNG text chunk from image file.
     
     Args:
         filename: Path to PNG file
-        verbose: If True, print all text chunks; if False, only print comment
+        verbose: If True, print all contents of a text chunk; if False, only print comment
     """
     try:
         with Image.open(filename) as img:
@@ -47,7 +47,7 @@ def main() -> None:
         "-v", 
         "--verbose",
         action="store_true",
-        help="Print all text chunks, not just comments")
+        help="Print all the information in a text chunk, not just comments")
     
     args = parser.parse_args()
 
