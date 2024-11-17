@@ -13,14 +13,21 @@ import argparse
 import time
 from datetime import datetime
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from PIL.PngImagePlugin import PngInfo
 import pyvisa
 
+DEFAULT_MASK = ['mask-default-blank.png']
+COMMENT_FONT = "NimbusMonoPS-Bold.otf"
+COMMENT_FONT_SIZE = 20
+COMMENT_POSITION = (50, 420)
+COMMENT_COLOR = (255, 255, 255)
+
+MAX_COMMENT_LENGTH = 255
 CHUNK_SIZE = 1420   # set VISA chunk size equal to the Ethernet frame
                     # size. This improves transfer speed
 TIMEOUT = 30000
-DEFAULT_MASK = ['mask-default-blank.png']
+
 do_clean = False
 do_sync = False
 
@@ -28,7 +35,7 @@ parser = argparse.ArgumentParser()
 rm = pyvisa.ResourceManager()
 
 def get_screen(resource: pyvisa.Resource, filename: str,
-               masks: list[str]) -> None:
+               masks: list[str], comment: str = None) -> None:
     with rm.open_resource(resource) as instr:
         instr.timeout = TIMEOUT
         instr.chunk_size = CHUNK_SIZE
@@ -44,11 +51,28 @@ def get_screen(resource: pyvisa.Resource, filename: str,
         for mask in masks:
             overlay = Image.open(mask)
             im = Image.alpha_composite(im, overlay)
-        im.save(name, pnginfo=add_data(instr))
+            
+        # Handle comment input if -C was specified but no comment provided
+        if comment is not None and not comment.strip():
+            try:
+                comment = input("Enter comment (max 255 chars) or press Enter to skip: ").strip()
+        
+            except (KeyboardInterrupt, EOFError):
+                print("\nComment input cancelled")
+                comment = None
+        
+         # Add comment to the image if provided and valid
+        if comment and comment.strip():
+            comment = comment[:MAX_COMMENT_LENGTH]  # Truncate comment if longer than maximum length
+            draw = ImageDraw.Draw(im)
+            font = ImageFont.truetype(COMMENT_FONT, COMMENT_FONT_SIZE)
+            draw.text(COMMENT_POSITION, comment, font=font, fill=COMMENT_COLOR)
+        # Add text chunk
+        png_info = add_data(instr, comment)
+        im.save(name, pnginfo=png_info)
     instr.close()
 
-# add instrument information to the screenshot file
-def add_data(instr) -> PngInfo:
+def add_data(instr, comment: str = None) -> PngInfo:
     txt_data = PngInfo()
     sysinfo = (instr.query('*IDN?'))
     calibration_date = (instr.query('CALibrate:DATE?'))
@@ -56,6 +80,12 @@ def add_data(instr) -> PngInfo:
     txt_data.add_text("System Information", sysinfo)
     txt_data.add_text("Calibration Date(Year, Month, Date)", calibration_date)
     txt_data.add_text("Calibraton Time", calibration_time)
+    
+    # Add comment to the text chunk if provided and valid
+    if comment and comment.strip():
+        comment = comment[:MAX_COMMENT_LENGTH]  # Truncate comment if longer than maximum length
+        txt_data.add_text("User Comment", comment)
+    
     return txt_data
 
 def clean_screen(instr: pyvisa.Resource) -> None:
@@ -78,8 +108,10 @@ def main() -> None:
     parser.add_argument("-s", "--synchronize", help="sync instrument's \
                     date and time with a PC", action="store_true")
     parser.add_argument("-c", "--clean", help="turn off the \
-                    measurements at the bottom of the screen",
-                    action="store_true")
+                    automatic measurements at the bottom of the \
+                    screen", action="store_true")
+    parser.add_argument("-C", "--comment", help="add comment to screenshot \
+                    (max 255 chars). If empty, will prompt for input", nargs='?', const='')
 
     args = parser.parse_args()    
     
@@ -89,8 +121,9 @@ def main() -> None:
         return
 
     # Check for dependent arguments without -i being specified
-    if not args.instrument and (args.mask is not None or args.clean or args.synchronize):
-        print("Error: Options -m, -c, and -s require -i/--instrument to be specified")
+    # if not args.instrument and (args.mask is not None or args.clean or args.synchronize or args.comment is not None or args.output is not None):
+    if not args.instrument:
+        print("Error: Options -m, -o -c, -C, and -s require -i/--instrument to be specified")
         return
 
     if args.instrument:
@@ -114,9 +147,10 @@ def main() -> None:
             global do_sync
             do_sync = True    
         
-        get_screen(args.instrument, filename, args.mask)
+        get_screen(args.instrument, filename, args.mask, args.comment)
         return
 
     print("Nothing to do. Use '-h' to get help")
+
 if __name__ == "__main__":
     main()

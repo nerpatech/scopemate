@@ -11,6 +11,7 @@ def run_scopemate_test():
     instrument = "TCPIP::192.168.4.120::INSTR"  # Replace with your scope's address
     masks = ["mask-default-blank.png"]
     output = "test-output"
+    comment = "Test comment for screenshot"
     
     # Define all possible flags
     flags = {
@@ -18,7 +19,8 @@ def run_scopemate_test():
         "-m": masks,
         "-o": [output],
         "-s": [""],
-        "-c": [""]
+        "-c": [""],
+        "-C": [comment, ""]  # Test both with comment text and empty prompt
     }
     
     # First test the list command independently
@@ -29,15 +31,30 @@ def run_scopemate_test():
     # Generate all possible flag combinations
     for r in range(1, len(flags) + 1):
         for flag_combo in itertools.combinations(flags.keys(), r):
-            cmd = [base_cmd]
+            base_cmd_list = [base_cmd]
             
-            for flag in flag_combo:
-                cmd.append(flag)
-                if flags[flag][0]:  # If the flag takes a value
-                    cmd.extend(flags[flag])
-            
-            print(f"\nTesting: {' '.join(cmd)}")
-            subprocess.run(cmd)
+            # Handle -C flag specially if it's in the combination
+            if "-C" in flag_combo:
+                for comment_value in flags["-C"]:
+                    cmd = base_cmd_list.copy()
+                    for flag in flag_combo:
+                        cmd.append(flag)
+                        if flag == "-C":
+                            if comment_value:
+                                cmd.append(comment_value)
+                        elif flags[flag][0]:
+                            cmd.extend(flags[flag])
+                    print(f"\nTesting: {' '.join(cmd)}")
+                    subprocess.run(cmd)
+            else:
+                # Handle all other flag combinations
+                cmd = base_cmd_list.copy()
+                for flag in flag_combo:
+                    cmd.append(flag)
+                    if flags[flag][0]:
+                        cmd.extend(flags[flag])
+                print(f"\nTesting: {' '.join(cmd)}")
+                subprocess.run(cmd)
 
 if __name__ == "__main__":
     print("Starting scopemate.py test suite...")
