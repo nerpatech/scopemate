@@ -5,30 +5,22 @@ from pathlib import Path
 from PIL import Image
 import glob
 
-def extract_png_info(filename: str, verbose: bool = False) -> None:
+def extract_png_info(filename: str) -> None:
     """Extract and display PNG text chunk from image file.
     
     Args:
         filename: Path to PNG file
-        verbose: If True, print all contents of a text chunk; if False, only print comment
+     
     """
     try:
         with Image.open(filename) as img:
             # Check if image has text chunks
-            if not hasattr(img, 'text'):
-                if verbose:
-                    print(f"{filename}: No text chunks found")
+            if not img.text:
                 return
 
-            if verbose:
-                # Print all text chunks
-                print(f"\n{filename}:")
-                for key, value in img.text.items():
-                    print(f"{key}: {value}")
-            else:
-                # Print only comment if present
-                if "Comment" in img.text:
-                    print(f"{filename}: {img.text['User Comment']}")
+            print(f"\n{filename}:")
+            for key, value in img.text.items():
+                print(f"{key}: {value}")
                 
     except (OSError, SyntaxError) as e:
         print(f"Error processing {filename}: {str(e)}")
@@ -37,17 +29,12 @@ def extract_png_info(filename: str, verbose: bool = False) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Extract comments from PNG files created by scopemate"
+        description="Extract text from PNG files created by scopemate"
     )
     parser.add_argument(
         "files", 
         help="PNG file(s) to process. Accepts wildcards", 
         nargs="+")
-    parser.add_argument(
-        "-v", 
-        "--verbose",
-        action="store_true",
-        help="Print all the information in a text chunk, not just comments")
     
     args = parser.parse_args()
 
@@ -64,7 +51,7 @@ def main() -> None:
                 print(f"Skipping non-PNG file: {filename}")
                 continue
                 
-            extract_png_info(filename, args.verbose)
+            extract_png_info(filename)
 
 if __name__ == "__main__":
     main()

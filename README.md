@@ -1,8 +1,8 @@
 Introduction
 
-Scopemate.py is a Python script designed to take a screenshot of an oscilloscope, specifically the Rigol DS2000 series instruments, and store it on a PC. The main purpose of this script is to simplify the process of capturing images of the oscilloscope's screen, which can be useful for documentation, analysis, or presentation.
+`scopemate.py` is a Python script designed to take a screenshot of an oscilloscope, specifically the Rigol DS2000 series instruments, and store it on a PC. The main purpose of this script is to simplify the process of capturing images of the oscilloscope's screen, which can be useful for documentation, analysis, or presentation.
 
-The script can declutter the image by masking out left and right tabs, top left corner, and trigger frequency indicator - either separately or all at once. Instrument information (brand, model, serial number, and firmware version), as well as calibration date and time, are automatically saved in a text chunk of the screenshot image file. Additionally, a comment can be provided via a command line argument. Auxiliary functions are available. See below for details.
+The script can declutter the image by masking out left and right tabs, top left corner, and trigger frequency indicator - either separately or all at once. Instrument information (brand, model, serial number, and firmware version), as well as calibration date and time, can be saved in a text chunk of the screenshot image file. Additionally, a comment can be added on the screenshot and placed in a text chunk. 
 
 Installation
 
@@ -23,23 +23,25 @@ Other useful options:
 
 '-s' - Oscilloscope clock will be set to the current PC time. This is useful when keeping accurate time is important.
 '-c' - Automatic measurement outputs at the bottom of the oscilloscope display will be turned off. This is useful if a comment is to be placed in this area.
-'-C' - A comment will be added to the screenshot both on the screen and in the text chunk of PNG file. The comment text can either follow the '-C' flag on the command line or be entered later interactively.
+'-C' - A comment will be added to the screenshot on the screen and in the text chunk of PNG file. The comment text can either follow the '-C' flag on the command line or be entered from the keyboard prompt.
+'-S' - System info such as Manufacturer, mode, serial number, firmware version, last calibration date and time will be read from the instrument and placed in a text chunk of PNG file.
 
-usage: scopemate.py [-h] [-i INSTRUMENT] [-l] [-m [MASK ...]] [-o OUTPUT] [-s] [-c] [-C [COMMENT]]
+usage: scopemate.py [-h] (-l | -i INSTRUMENT) [-m [MASK ...]] [-o OUTPUT] [-s] [-c] [-C [COMMENT]] [-S]
 
 options:
   -h, --help            show this help message and exit
+  -l, --list            list available instruments
   -i INSTRUMENT, --instrument INSTRUMENT
                         instrument to query
-  -l, --list            list available instruments
   -m [MASK ...], --mask [MASK ...]
                         apply mask(s)
   -o OUTPUT, --output OUTPUT
                         output filename prefix
-  -s, --synchronize     sync instrument's date and time with a PC
-  -c, --clean           turn off the automatic measurements at the bottom of the screen
+  -s, --synchronize     set instrument's date and time to PC time
+  -c, --clean           turn off the automatic measurements output at the bottom of the display
   -C [COMMENT], --comment [COMMENT]
-                        add comment to screenshot (max 255 chars). If empty, will prompt for input
+                        add comment to screenshot as well as text data to PNG file (max 60 chars). If empty, will prompt for input
+  -S, --sysinfo         add system information as text data to PNG file
 
 Masks
 
@@ -61,34 +63,35 @@ COMMENT_FONT = "NimbusMonoPS-Bold.otf"
 COMMENT_FONT_SIZE = 20
 COMMENT_POSITION = (50, 420)
 COMMENT_COLOR = (255, 255, 255)
+MAX_COMMENT_LENGTH = 60
 
 Modifying any other constants is not recommended.
 
 PNG text chunk
 
-Information about the oscilloscope (brand, model, serial number, firmware version) and calibration date and time is saved in the text chunk of every screenshot image. If a comment is specified, it will also be saved in this text chunk. As of this writing, no PC application capable of reading the text chunk appears to exist. To view it, use the `extract_comment.py` script.
+Information about the oscilloscope (manufacturer, model, serial number, firmware version, calibration date and time) can be saved in the text chunk of a screenshot image. An arbitrary comment text will also be saved (and printed on the screenshot). As of this writing, no PC application capable of reading the text chunk appears to exist. To view the data, use the `extract_comment.py` script.
 
-usage: extract_comment.py [-h] [-v] files [files ...]
+usage: extract_comment.py [-h] files [files ...]
 
-Extract comments from PNG files created by scopemate
+Extract text from PNG files created by scopemate
 
 positional arguments:
-  files          PNG file(s) to process. Accepts wildcards
+  files       PNG file(s) to process. Accepts wildcards
 
 options:
-  -h, --help     show this help message and exit
-  -v, --verbose  Print all the information in a text chunk, not just comments
+  -h, --help  show this help message and exit
 
 Usage example:
 
-user@host$ ./extract_comment.py figu*
+user@host$ ./extract_comment.py fig*
 
-figure-1.png: Figure 1. A screenshot with no masks applied
-figure-2.png: Figure 2. A screenshot with default mask applied
-figure-3.png: Figure 3. A screenshot with custom mask applied
-figure-4.png: Figure 4. A screenshot with Rigol logo removed
-figure-5.png: Figure 5. A screenshot with Rigol logo replaced
+figure-1.png:
+Comment: Figure 1. A screenshot with no masks applied
 
-`test_scopemate.py` is a test script. When executed, it will run `scopemate.py` with every combination of available options. It is used as a quick check after `scopemate.py` modifications. 
+figure-2.png:
+Comment: Figure 2. A screenshot with default mask applied
 
-Images demonstrating scopemate.py features are included below for your viewing pleasure.
+figure-3.png:
+Comment: Figure 3. A screenshot with Rigol logo removed
+
+The images used in this example are included below for reference.

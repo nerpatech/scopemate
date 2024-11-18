@@ -7,3 +7,4 @@ __pycache__/
 test-output*
 *~
 screenshot*
+test_scopemate.py
