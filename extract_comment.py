@@ -22,12 +22,12 @@ def extract_png_info(filename: str, verbose: bool = False) -> None:
 
             if verbose:
                 # Print all text chunks
-                print(f"\n{filename} text chunks:")
+                print(f"\n{filename}:")
                 for key, value in img.text.items():
                     print(f"{key}: {value}")
             else:
                 # Print only comment if present
-                if "User Comment" in img.text:
+                if "Comment" in img.text:
                     print(f"{filename}: {img.text['User Comment']}")
                 
     except (OSError, SyntaxError) as e:

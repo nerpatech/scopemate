@@ -11,14 +11,15 @@ def run_scopemate_test():
     instrument = "TCPIP::192.168.4.120::INSTR"  # Replace with your scope's address
     masks = ["mask-default-blank.png"]
     output = "test-output"
-    comment = "Test comment for screenshot"
-    
+    comment = "Test comment for screenshot abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
     # Define all possible flags
     flags = {
         "-i": [instrument],
         "-m": masks,
         "-o": [output],
         "-s": [""],
+        "-S": [""],
         "-c": [""],
         "-C": [comment, ""]  # Test both with comment text and empty prompt
     }

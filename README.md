@@ -6,6 +6,7 @@ The script can declutter the image by masking out left and right tabs, top left 
 
 Installation
 
+* clone the repo.
 * (Optional but highly recommended) Install and activate a virtual environment.
 * Install dependencies: `pip install pyvisa pyvisa-py pillow`
 * Connect your instrument to the same subnet as your PC.

@@ -17,76 +17,78 @@ from PIL import Image, ImageDraw, ImageFont
 from PIL.PngImagePlugin import PngInfo
 import pyvisa
 
+DEFAULT_PREFIX = 'screenshot'
 DEFAULT_MASK = ['mask-default-blank.png']
 COMMENT_FONT = "NimbusMonoPS-Bold.otf"
 COMMENT_FONT_SIZE = 20
 COMMENT_POSITION = (50, 420)
 COMMENT_COLOR = (255, 255, 255)
+MAX_COMMENT_LENGTH = 60
 
-MAX_COMMENT_LENGTH = 255
 CHUNK_SIZE = 1420   # set VISA chunk size equal to the Ethernet frame
                     # size. This improves transfer speed
 TIMEOUT = 30000
 
-do_clean = False
-do_sync = False
-
-parser = argparse.ArgumentParser()
 rm = pyvisa.ResourceManager()
 
-def get_screen(resource: pyvisa.Resource, filename: str,
-               masks: list[str], comment: str = None) -> None:
-    with rm.open_resource(resource) as instr:
+def query_oscilloscope(args: argparse.Namespace) -> None:
+    img_text = None
+    with rm.open_resource(args.instrument) as instr:
         instr.timeout = TIMEOUT
         instr.chunk_size = CHUNK_SIZE
-        name = filename + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'
-        if do_clean:
-            clean_screen(instr)
-        if do_sync:
+
+        if args.clean:
+            clean_screen(instr)            
+
+        if args.synchronize:
             sync_time(instr)
-        instr.write(':DISPlay:DATA?')
-        screenshot = instr.read_raw()[11:] # discard BMP header
-        im = Image.open(BytesIO(screenshot))
-        im.putalpha(255)
-        for mask in masks:
-            overlay = Image.open(mask)
-            im = Image.alpha_composite(im, overlay)
-            
-        # Handle comment input if -C was specified but no comment provided
-        if comment is not None and not comment.strip():
-            try:
-                comment = input("Enter comment (max 255 chars) or press Enter to skip: ").strip()
-        
-            except (KeyboardInterrupt, EOFError):
-                print("\nComment input cancelled")
-                comment = None
-        
-         # Add comment to the image if provided and valid
-        if comment and comment.strip():
-            comment = comment[:MAX_COMMENT_LENGTH]  # Truncate comment if longer than maximum length
-            draw = ImageDraw.Draw(im)
-            font = ImageFont.truetype(COMMENT_FONT, COMMENT_FONT_SIZE)
-            draw.text(COMMENT_POSITION, comment, font=font, fill=COMMENT_COLOR)
-        # Add text chunk
-        png_info = add_data(instr, comment)
-        im.save(name, pnginfo=png_info)
+
+        if args.sysinfo or args.comment:
+            img_text = add_text(instr, args)
+
+        capture_screenshot(instr, args, img_text)
+
     instr.close()
 
-def add_data(instr, comment: str = None) -> PngInfo:
-    txt_data = PngInfo()
-    sysinfo = (instr.query('*IDN?'))
-    calibration_date = (instr.query('CALibrate:DATE?'))
-    calibration_time = (instr.query('CALibrate:TIME?'))
-    txt_data.add_text("System Information", sysinfo)
-    txt_data.add_text("Calibration Date(Year, Month, Date)", calibration_date)
-    txt_data.add_text("Calibraton Time", calibration_time)
+def capture_screenshot(instr: pyvisa.Resource, args: argparse.Namespace, png_info: PngInfo) -> None:
+    instr.write(':DISPlay:DATA?')
+    screenshot = instr.read_raw()[11:] # discard BMP header
+    im = Image.open(BytesIO(screenshot))
+    im.putalpha(255)
+    for mask in args.mask:
+        overlay = Image.open(mask)
+        im = Image.alpha_composite(im, overlay)
     
-    # Add comment to the text chunk if provided and valid
-    if comment and comment.strip():
-        comment = comment[:MAX_COMMENT_LENGTH]  # Truncate comment if longer than maximum length
-        txt_data.add_text("User Comment", comment)
-    
-    return txt_data
+    if args.comment:
+        draw = ImageDraw.Draw(im)
+        font = ImageFont.truetype(COMMENT_FONT, COMMENT_FONT_SIZE)
+        draw.text(COMMENT_POSITION, args.comment, font=font, fill=COMMENT_COLOR)
+
+    if png_info:
+        im.save(args.output, pnginfo=png_info)
+    else:
+        im.save(args.output)
+    return
+
+def add_text(instr: pyvisa.Resource, args: argparse.Namespace) -> PngInfo:
+    text_data = PngInfo()
+
+    if args.sysinfo:
+        sysinfo = (instr.query('*IDN?')).split(',')
+        text_data.add_text("Manufacturer", sysinfo[0])
+        text_data.add_text("Model", sysinfo[1])
+        text_data.add_text("S/N", sysinfo[2])
+        text_data.add_text("Firmware Version", sysinfo[3])
+        calibration_date = (instr.query('CALibrate:DATE?'))
+        calibration_time = (instr.query('CALibrate:TIME?'))
+        text_data.add_text("Calibration Date", calibration_date.replace(",", "-"))
+        text_data.add_text("Calibraton Time", calibration_time.replace(",", ":"))
+
+    # Add comment to the text chunk if provided
+    if args.comment:
+        text_data.add_text("Comment", args.comment)
+
+    return text_data
 
 def clean_screen(instr: pyvisa.Resource) -> None:
     instr.query(':MEASure:CLEar ALL' + ';*OPC?')
@@ -99,58 +101,59 @@ def sync_time(instr: pyvisa.Resource) -> None:
     instr.query('SYSTem:TIME ' + date_time[1] + ';*OPC?')
     print("Oscilloscope clock set to PC time")
 
-def main() -> None:
-    parser.add_argument("-i", "--instrument", help="instrument to query")
-    parser.add_argument("-l", "--list", help="list available instruments",
-                    action='store_true')
-    parser.add_argument("-m", "--mask", nargs='*', help="apply mask(s)")
-    parser.add_argument("-o", "--output", help="output filename prefix")
-    parser.add_argument("-s", "--synchronize", help="sync instrument's \
-                    date and time with a PC", action="store_true")
-    parser.add_argument("-c", "--clean", help="turn off the \
-                    automatic measurements at the bottom of the \
-                    screen", action="store_true")
-    parser.add_argument("-C", "--comment", help="add comment to screenshot \
-                    (max 255 chars). If empty, will prompt for input", nargs='?', const='')
-
-    args = parser.parse_args()    
+def main(args: argparse.Namespace) -> None:
     
     # if -l is specified all other parameters are silently ignored
     if args.list:
         print(rm.list_resources())
         return
+    
+    # specify default filename if '-o' is nor specified
+    if args.output:
+        pass
+    else:
+        args.output = DEFAULT_PREFIX
 
-    # Check for dependent arguments without -i being specified
-    # if not args.instrument and (args.mask is not None or args.clean or args.synchronize or args.comment is not None or args.output is not None):
-    if not args.instrument:
-        print("Error: Options -m, -o -c, -C, and -s require -i/--instrument to be specified")
-        return
+    args.output = args.output + '-' + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.png'     
 
-    if args.instrument:
-        if args.output:
-            filename = args.output
-        else:
-            filename = 'screenshot'
+    # specify default mask if not provided with '-m'
+    if args.mask:
+        pass
+    elif args.mask is None:  # New condition for no -m parameter
+        args.mask = []       # Empty list means no masks
+    else: 
+        args.mask = DEFAULT_MASK
 
-        if args.mask:
-            pass
-        elif args.mask is None:  # New condition for no -m parameter
-            args.mask = []       # Empty list means no masks
-        else: 
-            args.mask = DEFAULT_MASK
-
-        if args.clean:
-            global do_clean
-            do_clean = True
-
-        if args.synchronize:
-            global do_sync
-            do_sync = True    
+    # Handle comment input if -C was specified but no comment provided
+    if args.comment is not None and not args.comment.strip():
+        try:
+            args.comment = input("Enter comment (max 255 chars) or press Enter to skip: ").strip()
         
-        get_screen(args.instrument, filename, args.mask, args.comment)
-        return
+        except (KeyboardInterrupt, EOFError):
+                print("\nComment input cancelled")
+                args.comment = None
 
-    print("Nothing to do. Use '-h' to get help")
+    if args.comment:
+        args.comment = args.comment[:MAX_COMMENT_LENGTH]  
+
+    query_oscilloscope(args)
+    return
 
 if __name__ == "__main__":
-    main()
+
+    parser = argparse.ArgumentParser()
+    
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("-l", "--list", help="list available instruments", action='store_true')
+    group.add_argument("-i", "--instrument", help="instrument to query")
+
+    parser.add_argument("-m", "--mask", nargs='*', help="apply mask(s)")
+    parser.add_argument("-o", "--output", help="output filename prefix")
+    parser.add_argument("-s", "--synchronize", help="set instrument's date and time to PC time", action="store_true")
+    parser.add_argument("-c", "--clean", help="turn off the automatic measurements output at the bottom of the display", action="store_true")
+    parser.add_argument("-C", "--comment", help="add comment to screenshot (max 255 chars). If empty, will prompt for input", nargs='?', const='')
+    parser.add_argument("-S", "--sysinfo", help="add system information as text data to PNG file", action="store_true")
+
+    args = parser.parse_args()
+
+    main(args)
