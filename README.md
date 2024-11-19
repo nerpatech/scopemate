@@ -95,6 +95,7 @@ figure-3.png:
 Comment: Figure 3. A screenshot with Rigol logo removed
 
 The images used in this example are included below for reference.
+<img src="figure-1.png" width="800" height="480" />
 ![Figure 1](figure-1.png)
 ![Figure 2](figure-2.png)
 ![Figure 3](figure-3.png)
