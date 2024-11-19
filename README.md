@@ -1,10 +1,10 @@
-Introduction
+# Introduction
 
 `scopemate.py` is a Python script designed to take a screenshot of an oscilloscope, specifically the Rigol DS2000 series instruments, and store it on a PC. The main purpose of this script is to simplify the process of capturing images of the oscilloscope's screen, which can be useful for documentation, analysis, or presentation.
 
 The script can declutter the image by masking out left and right tabs, top left corner, and trigger frequency indicator - either separately or all at once. Instrument information (brand, model, serial number, and firmware version), as well as calibration date and time, can be saved in a text chunk of the screenshot image file. Additionally, a comment can be added on the screenshot and placed in a text chunk. 
 
-Installation
+# Installation
 
 * clone the repo.
 * (Optional but highly recommended) Install and activate a virtual environment.
@@ -13,7 +13,7 @@ Installation
 * Run `./scopemate.py -l`. If the instrument is reachable, its ID will be returned, which looks like: `TCPIP::<ip address>::INSTR`
 * Run `./scopemate.py -i TCPIP::<ip address>::INSTR`. A screenshot of the specified instrument will be taken and saved into an image file named 'screenshot-<date,time>.png'.
 
-Basic Usage
+# Basic Usage
 
 * Run `./scopemate.py -l`. If the instrument is reachable, its ID will be returned. All other options will be silently ignored.
 * Run `./scopemate.py -i TCPIP::<ip address>::INSTR`. A screenshot of the specified instrument will be taken and saved into an image file named 'screenshot-<date,time>.png'. If a different prefix is desired, it can be specified using the '-o' option.
@@ -25,7 +25,7 @@ Other useful options:
 '-c' - Automatic measurement outputs at the bottom of the oscilloscope display will be turned off. This is useful if a comment is to be placed in this area.
 '-C' - A comment will be added to the screenshot on the screen and in the text chunk of PNG file. The comment text can either follow the '-C' flag on the command line or be entered from the keyboard prompt.
 '-S' - System info such as Manufacturer, mode, serial number, firmware version, last calibration date and time will be read from the instrument and placed in a text chunk of PNG file.
-
+```
 usage: scopemate.py [-h] (-l | -i INSTRUMENT) [-m [MASK ...]] [-o OUTPUT] [-s] [-c] [-C [COMMENT]] [-S]
 
 options:
@@ -42,8 +42,8 @@ options:
   -C [COMMENT], --comment [COMMENT]
                         add comment to screenshot as well as text data to PNG file (max 60 chars). If empty, will prompt for input
   -S, --sysinfo         add system information as text data to PNG file
-
-Masks
+```
+# Masks
 
 Masks can be used to remove unnecessary elements of the display to make it look less cluttered. If desired, right and left tabs, Rigol logo at top left, and trigger frequency indicator can be masked out. The provided masks can easily be customized in any image editor (like GIMP). See Figures 3 and 5.
 
@@ -54,23 +54,24 @@ The following masks are provided:
 * `mask-left-right-top-blank.png` - Same as above with trigger frequency indicator left unmasked.
 * `mask-left-tab.png`, `mask-right-tab.png`, `mask-top-left-blank.png`, `mask-trigger-freq.png` - Masks for single display areas. One or more can be specified with the '-m' flag.
 
-Further customization:
+# Further customization
 
 The following constants at the top of scopemate.py file can be changed if desired.
 
+```
 DEFAULT_MASK = ['mask-default-blank.png']
 COMMENT_FONT = "NimbusMonoPS-Bold.otf"
 COMMENT_FONT_SIZE = 20
 COMMENT_POSITION = (50, 420)
 COMMENT_COLOR = (255, 255, 255)
 MAX_COMMENT_LENGTH = 60
-
+```
 Modifying any other constants is not recommended.
 
-PNG text chunk
+# PNG text chunk
 
 Information about the oscilloscope (manufacturer, model, serial number, firmware version, calibration date and time) can be saved in the text chunk of a screenshot image. An arbitrary comment text will also be saved (and printed on the screenshot). As of this writing, no PC application capable of reading the text chunk appears to exist. To view the data, use the `extract_comment.py` script.
-
+```
 usage: extract_comment.py [-h] files [files ...]
 
 Extract text from PNG files created by scopemate
@@ -80,7 +81,7 @@ positional arguments:
 
 options:
   -h, --help  show this help message and exit
-
+```
 Usage example:
 
 user@host$ ./extract_comment.py fig*
@@ -95,6 +96,7 @@ figure-3.png:
 Comment: Figure 3. A screenshot with Rigol logo removed
 
 The images used in this example are included below for reference.
+<img src="figure-1.jpg" width="800" height="480" alt="figure 1">
 ![Figure 1](figure-1.png)
 ![Figure 2](figure-2.png)
 ![Figure 3](figure-3.png)
