@@ -94,4 +94,11 @@ Comment: Figure 2. A screenshot with default mask applied
 figure-3.png:
 Comment: Figure 3. A screenshot with Rigol logo removed
 
+<<<<<<< HEAD
 The images used in this example are included below for reference.
+=======
+The images used in this example are included below for reference.
+![Figure 1](figure-1.png)
+![Figure 2](figure-2.png)
+![Figure 3](figure-3.png)
+>>>>>>> master
