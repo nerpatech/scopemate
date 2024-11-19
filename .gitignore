@@ -1,6 +1,10 @@
 .git/
 venv/
+.venv/
 __pycache__/
 *xcf
 *nerpa*
+test-output*
 *~
+screenshot*
+test_scopemate.py
