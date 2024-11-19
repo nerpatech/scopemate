@@ -22,8 +22,11 @@ The script can declutter the image by masking out left and right tabs, top left 
 Other useful options:
 
 '-s' - Oscilloscope clock will be set to the current PC time. This is useful when keeping accurate time is important.
+
 '-c' - Automatic measurement outputs at the bottom of the oscilloscope display will be turned off. This is useful if a comment is to be placed in this area.
+
 '-C' - A comment will be added to the screenshot on the screen and in the text chunk of PNG file. The comment text can either follow the '-C' flag on the command line or be entered from the keyboard prompt.
+
 '-S' - System info such as Manufacturer, mode, serial number, firmware version, last calibration date and time will be read from the instrument and placed in a text chunk of PNG file.
 ```
 usage: scopemate.py [-h] (-l | -i INSTRUMENT) [-m [MASK ...]] [-o OUTPUT] [-s] [-c] [-C [COMMENT]] [-S]
@@ -45,7 +48,7 @@ options:
 ```
 # Masks
 
-Masks can be used to remove unnecessary elements of the display to make it look less cluttered. If desired, right and left tabs, Rigol logo at top left, and trigger frequency indicator can be masked out. The provided masks can easily be customized in any image editor (like GIMP). See Figures 3 and 5.
+Masks can be used to remove unnecessary elements of the display to make it look less cluttered. If desired, right and left tabs, Rigol logo at top left, and trigger frequency indicator can be masked out.
 
 The following masks are provided:
 
@@ -96,7 +99,7 @@ figure-3.png:
 Comment: Figure 3. A screenshot with Rigol logo removed
 
 The images used in this example are included below for reference.
-<img src="figure-1.jpg" width="800" height="480" alt="figure 1">
+<img src="figure-1.png" width="800" height="480" alt="figure 1">
 ![Figure 1](figure-1.png)
 ![Figure 2](figure-2.png)
 ![Figure 3](figure-3.png)
