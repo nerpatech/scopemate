@@ -47,7 +47,7 @@ def query_oscilloscope(args: argparse.Namespace) -> None:
 
         capture_screenshot(instr, args, img_text)
 
-    instr.close()
+        instr.close()
 
 
 def capture_screenshot(
