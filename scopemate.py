@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Takes a screenshot of Rigol Oscilloscope. Compatible with DS2000 series, tested on MSO2302A
-# In no particular order, inspired by:
+# Takes a screenshot of Rigol Oscilloscope. Compatible with DS2000
+# series, tested on MSO2302A
 
 import argparse
 import time
@@ -26,6 +26,11 @@ rm = pyvisa.ResourceManager()
 
 
 def query_oscilloscope(args: argparse.Namespace) -> None:
+    """Query oscilloscope and process commands based on provided arguments.
+
+    Args:
+        args: Command line arguments namespace
+    """
     img_text = None
     with rm.open_resource(args.instrument) as instr:
         instr.timeout = TIMEOUT
@@ -42,12 +47,20 @@ def query_oscilloscope(args: argparse.Namespace) -> None:
 
         capture_screenshot(instr, args, img_text)
 
-    instr.close()
+        instr.close()
 
 
 def capture_screenshot(
     instr: pyvisa.Resource, args: argparse.Namespace, png_info: PngInfo
 ) -> None:
+    """Capture and save a screenshot from the oscilloscope with optional
+    overlays and text.
+
+    Args:
+        instr: PyVISA resource object connected to oscilloscope
+        args: Command line arguments namespace
+        png_info: PNG metadata information to embed in the image
+    """
     instr.write(":DISPlay:DATA?")
     screenshot = instr.read_raw()[11:]  # discard BMP header
     im = Image.open(BytesIO(screenshot))
@@ -77,7 +90,19 @@ def add_text(
     instr: pyvisa.Resource, args: argparse.Namespace
 ) -> PngInfo:
     text_data = PngInfo()
+    """Create PNG metadata containing system information and comments.
 
+    Args:
+        instr: PyVISA resource object connected to oscilloscope
+        args: Command line arguments namespace containing sysinfo and comment flags
+
+    Returns:
+        PngInfo: PNG metadata object containing system information and/or comment text
+
+    The function queries the oscilloscope for system information if the sysinfo flag
+    is set, including manufacturer, model, serial number, firmware version, and calibration
+    details. It also adds any user comments if the comment flag is set.
+    """
     if args.sysinfo:
         sysinfo = (instr.query("*IDN?")).split(",")
         text_data.add_text("Manufacturer", sysinfo[0])
@@ -101,12 +126,22 @@ def add_text(
 
 
 def clean_screen(instr: pyvisa.Resource) -> None:
+    """Clear all measurements from the oscilloscope display.
+
+    Args:
+        instr: PyVISA resource object connected to oscilloscope
+    """
     instr.query(":MEASure:CLEar ALL" + ";*OPC?")
     time.sleep(1)
     print("Measurements cleaned")
 
 
 def sync_time(instr: pyvisa.Resource) -> None:
+    """Synchronize oscilloscope clock with PC system time.
+
+    Args:
+        instr: PyVISA resource object connected to oscilloscope
+    """
     date_time = datetime.now().strftime("%Y,%m,%d %H,%M,%S").split(" ")
     instr.query("SYSTem:DATE " + date_time[0] + ";*OPC?")
     instr.query("SYSTem:TIME " + date_time[1] + ";*OPC?")
@@ -114,6 +149,11 @@ def sync_time(instr: pyvisa.Resource) -> None:
 
 
 def main(args: argparse.Namespace) -> None:
+    """Main program logic handling argument processing and program flow.
+
+    Args:
+        args: Command line arguments namespace containing all CLI parameters
+    """
     # if -l is specified all other parameters are silently ignored
     if args.list:
         print(rm.list_resources())
