@@ -21,7 +21,7 @@ The script can declutter the image by masking out left and right tabs, top left 
 
 Other useful options:
 
-'-s' - Oscilloscope clock will be set to the current PC time. This is useful when keeping accurate time is important.
+'-s' - Oscilloscope clock will be set to the current PC time.
 
 '-c' - Automatic measurement outputs at the bottom of the oscilloscope display will be turned off. This is useful if a comment is to be placed in this area.
 
